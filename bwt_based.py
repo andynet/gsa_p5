@@ -102,7 +102,7 @@ def get_d_table(pattern, sa, c_table, o_prime_table):
 
 def inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs, L, R, new_pattern, new_cigar):
 
-    print(f'{pattern} {i:3} {max_diffs:3} {L:3} {R:3} {new_pattern:10} {new_cigar:10}')
+    # print(f'{pattern} {i:3} {max_diffs:3} {L:3} {R:3} {new_pattern:10} {new_cigar:10}')
     intervals = []
 
     if i < 0:
