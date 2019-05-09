@@ -219,7 +219,7 @@ def main():
             o_list.append(o_table)
             o_prime_list.append(o_prime_table)
 
-        with open(args.fasta + '.sa', 'w') as outfile:
+        with open(args.fasta + '.suf_array', 'w') as outfile:
             json.dump(sa_list, outfile, sort_keys=True)
             print(f'Created file {outfile.name}')
 
@@ -236,7 +236,7 @@ def main():
             print(f'Created file {outfile.name}')
 
     else:
-        with open(args.fasta + '.sa', 'r') as infile:
+        with open(args.fasta + '.suf_array', 'r') as infile:
             sa_list = json.load(infile)
 
         with open(args.fasta + '.c_tab', 'r') as infile:
