@@ -82,28 +82,8 @@ def get_d_table(pattern, sa, c_table, o_prime_table):
     return d_table
 
 
-# def get_d_table_naive(pattern, string):
-#
-#     d_table = []
-#
-#     j = 0
-#     ndiffs = 0
-#
-#     for i in range(len(pattern)):
-#
-#         if pattern[j:i+1] not in string:
-#             j = i+1
-#             ndiffs += 1
-#
-#         d_table.append(ndiffs)
-#
-#     return d_table
-
-
 def inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs, L, R, new_pattern, new_cigar):
 
-    # print(f'{pattern} {i:3} {max_diffs:3} {L:3} {R:3} {new_pattern:10} {new_cigar:10}')
-    # print(new_pattern, new_cigar)
     intervals = []
 
     if i < 0:
@@ -111,7 +91,7 @@ def inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs, L, R, new_p
     else:
         diffs = d_table[i]
 
-    if max_diffs < diffs:  # if i = -1 then d_table[-1] == 0
+    if max_diffs < diffs:
         return intervals
 
     if i < 0:
@@ -122,14 +102,9 @@ def inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs, L, R, new_p
             intervals.append((position, ''.join(new_cigar)))
         return intervals
 
-    # deletion from pattern
-    # tmp_pattern = new_pattern[0:i] + new_pattern[i+1:]
-    # tmp_cigar = new_cigar[0:i] + 'D' + new_cigar[i+1:]
-    # tmp_pattern = new_pattern is not None if list(new_pattern) else []
-    # tmp_cigar = new_cigar is not None if list(new_cigar).append('D') else []
+    # read contains insertion in comparison with reference
     tmp_pattern = new_pattern + []
     tmp_cigar = new_cigar + ['I']
-    # result = inex_recur(pattern, sa, c_table, o_table, d_table, i-1, max_diffs-1, L, R, tmp_pattern, tmp_cigar)
     result = inex_recur(pattern, sa, c_table, o_table, d_table, i-1, max_diffs-1, L, R, tmp_pattern, tmp_cigar)
     intervals = intervals + result
 
@@ -143,9 +118,7 @@ def inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs, L, R, new_p
             R_new = 0
 
         if L_new <= R_new:
-            # insertion to pattern
-            # tmp_pattern = new_pattern[0:i] + letter + new_pattern[i:]
-            # tmp_cigar = new_cigar[0:i] + 'I' + new_cigar[i:]
+            # read contains deletion in comparison with reference
             tmp_pattern = new_pattern + [letter]
             tmp_cigar = new_cigar + ['D']
             result = inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs-1, L_new, R_new, tmp_pattern, tmp_cigar)
@@ -153,16 +126,12 @@ def inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs, L, R, new_p
 
             if letter == pattern[i]:
                 # match
-                # tmp_pattern = new_pattern[0:i] + letter + new_pattern[i + 1:]
-                # tmp_cigar = new_cigar[0:i] + 'M' + new_cigar[i + 1:]
                 tmp_pattern = new_pattern + [letter]
                 tmp_cigar = new_cigar + ['M']
                 result = inex_recur(pattern, sa, c_table, o_table, d_table, i-1, max_diffs, L_new, R_new, tmp_pattern, tmp_cigar)
                 intervals = intervals + result
             else:
                 # mismatch
-                # tmp_pattern = new_pattern[0:i] + letter + new_pattern[i + 1:]
-                # tmp_cigar = new_cigar[0:i] + 'X' + new_cigar[i + 1:]
                 tmp_pattern = new_pattern + [letter]
                 tmp_cigar = new_cigar + ['M']
                 result = inex_recur(pattern, sa, c_table, o_table, d_table, i-1, max_diffs-1, L_new, R_new, tmp_pattern, tmp_cigar)
@@ -174,7 +143,6 @@ def inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs, L, R, new_p
 def inexact_search(pattern, sa, c_table, o_table, o_prime_table, max_diffs):
 
     d_table = get_d_table(pattern, sa, c_table, o_prime_table)
-    # result = inex_recur(pattern, sa, c_table, o_table, d_table, len(pattern)-1, max_diffs, 0, len(sa)-1, pattern, 'M'*len(pattern))
     result = inex_recur(pattern, sa, c_table, o_table, d_table, len(pattern)-1, max_diffs, 0, len(sa)-1, [], [])
     return result
 
@@ -269,16 +237,9 @@ def main():
 
             for fastq_record in fastq:
 
-                # print(f'{fastq_record.seq} in {fasta_record.seq} at:')
-
                 results = inexact_search(fastq_record.seq, suffix_array, c_table, o_table, o_prime_table, args.d)
-                # print(results)
-                # result = set()
-                # for position in list(positions):
-                #     result = result.union(set(suffix_array[position[0]:position[1] + 1]))
-                #
-                # # print('result: ', result)
                 results = list(set(results))
+
                 for position, pseudo_cigar in results:
                     print(f'{fastq_record.sid}\t0\t{fasta_record.sid.strip()}\t{position + 1}\t0\t'
                           f'{create_cigar(pseudo_cigar[::-1])}\t*\t0\t0\t{fastq_record.seq}\t{fastq_record.qual}')
