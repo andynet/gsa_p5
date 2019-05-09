@@ -4,33 +4,16 @@ import argparse
 import json
 
 
-def compare(t1, t2):
+def get_suffix_array_low_mem_fast(seq):
 
-    if t1[1][t1[0]:] < t2[1][t2[0]:]:
-        return -1
-    elif t1[1][t1[0]:] > t2[1][t2[0]:]:
-        return 1
-    else:
-        return 0
+    def compare(i, j):
 
+        while seq[i] == seq[j]:
+            i = i + 1
+            j = j + 1
+        return -1 if seq[i] < seq[j] else 1
 
-def get_suffix_array_low_mem(seq):
-
-    suffix_pairs = sorted([(i, seq) for i in range(len(seq))], key=cmp_to_key(compare))
-
-    suffix_array = [suffix_pairs[i][0] for i in range(len(seq))]
-
-    return suffix_array
-
-
-# def get_suffix_array(seq):
-#
-#     suffix_pairs = sorted([(i, seq[i:]) for i in range(len(seq))], key=lambda suffix: suffix[1])
-#
-#     suffix_array = [suffix_pairs[i][0] for i in range(len(seq))]
-#     suffices = [suffix_pairs[i][1] for i in range(len(seq))]
-#
-#     return suffix_array, suffices
+    return sorted([i for i in range(len(seq))], key=cmp_to_key(compare))
 
 
 def get_c_table(seq):
@@ -203,13 +186,13 @@ def main():
         sa_list, suff_list, c_list, o_list, o_prime_list = [], [], [], [], []
         for fasta_record in fasta:
             # suffix_array_1, suffices = get_suffix_array(fasta_record.seq + '$')
-            suffix_array = get_suffix_array_low_mem(fasta_record.seq + '$')
+            suffix_array = get_suffix_array_low_mem_fast(fasta_record.seq + '$')
             c_table = get_c_table(fasta_record.seq + '$')
             o_table = get_o_table(fasta_record.seq + '$', suffix_array)
             # print(suffix_array_1, suffix_array)
 
             # suffix_array_prime_1, suffices_prime = get_suffix_array(fasta_record.seq[::-1] + '$')
-            suffix_array_prime = get_suffix_array_low_mem(fasta_record.seq[::-1] + '$')
+            suffix_array_prime = get_suffix_array_low_mem_fast(fasta_record.seq[::-1] + '$')
             o_prime_table = get_o_table(fasta_record.seq[::-1] + '$', suffix_array_prime)
             # print(suffix_array_prime_1, suffix_array_prime)
 
