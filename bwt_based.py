@@ -99,7 +99,7 @@ def inex_recur(pattern, sa, c_table, o_table, d_table, i, max_diffs, L, R, new_p
 
     if i < 0:
         positions = sa[L:R+1]
-        if new_cigar[0] == 'D':
+        while new_cigar[0] == 'D':
             new_cigar = new_cigar[1:]
         for position in positions:
             intervals.append((position, ''.join(new_cigar)))
