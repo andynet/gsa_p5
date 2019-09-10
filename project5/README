@@ -1,0 +1,118 @@
+# Test and evaluation of readmappers
+
+This directory contains data for testing your readmapper(s).
+
+In the scripts directory you will find two scripts:
+
+ - randomize-N.py    Takes FASTA file and produce a new one
+                      by replacing all Ns with a random A,C,G,T
+
+ - simulate-fastq.py Takes a FASTQ file by sampling random
+                      strings from a FASTA file and modify
+                      them.
+
+Both scripts need to run in Python 3.
+
+In the data directory you will find a number of FASTA and FASTQ
+files that I have sampled.
+
+The genomes subdirectory contains prefixes of the human genome. The filenames tell you how many lines I have extracted from the human genome, e.g. hg38-1000.fa contains the first thousand lines. I have removed Ns and replaced them with random nucleotides using randomize-N.py
+
+The file hg18-chr1-chr10-100.fa contains the first 100 lines for each of chromosomes 1 to 10. You can use it for testing if your readmapper can handle more than one chromosome.
+
+The reads subdirectory contains FASTQ files of varying size. The filenames tell you how many reads the file contains, the lengths of the reads, and the edit distance I allowed when running simulate-fastq.py. For example, reads-100-100-2.fq has 100 reads of length 100 with a maximum edits of two.
+
+The readmappers directory contains two of my readmapper implementations, one that uses the exact pattern matching combined with an edit cloud generator and one based on the BWT.
+
+The BWT based algorithm takes a -p option for preprocessing the reference genome, and when mapping it takes a -d argument where you specify the maximum edit distance we will accept as a match. The exact pattern matcher doesn't have the -p option since it only preprocess the reads, but it does take the -d option.
+
+To build the two readmappers you should run make in their directories:
+
+$ cd readmappers
+$ make
+$ cd ..
+
+# Testing your readmapper(s)
+
+The test_mappers.sh will check your mapper against mine. Assuming that my mappers work as intended, you can compare the output of your mapper against mine.
+
+The script takes three options:
+	1) The number of edits to allow
+	2) The reference genome (in FASTA format)
+	3) The reads file (in FASTQ format)
+	
+If you run it from the main directory, you will test my mappers against each other. To add your own mapper(s) you can add it/them after the argument assignments. You will find these two lines where I tell the script where to find the mappers:
+
+	exact=./readmappers/exact_readmapper
+	bwt=./readmappers/bwt_readmapper
+
+The next line specify which mapper to test against. I use my exact readmapper:
+
+	# Reference SAM result to compare to.
+	refcmd="./readmappers/exact_readmapper -d $edits $reference $reads"
+
+The following lines is where you should add your own mapper. I use one array for naming the readmappers:
+
+	# Preprocessing commands.
+	declare -a names=(
+		Exact
+		BWT
+	)
+
+Then I specify the preprocessing commands
+	
+	declare -a preprocess_cmds=(
+		true
+		"$bwt -p $reference"
+	)
+
+and finally the mapping commands:
+	
+	declare -a map_cmds=(
+		"$exact -d $edits $reference $reads"
+		"$bwt -d $edits $reference $reads"
+	)
+
+You need to add all commands to the script to test your own mapper(s).
+
+# Performance evaluation
+
+The time_mappers.sh script will measure the performance of your mapper(s) and the performance of bwa. I have included bwa to get a baseline of the performance. The real performance, measured in seconds on your machine, depends on your architecture and your computer's speed. Using a baseline makes different mappers, run on different machines, comparable. You need to have bwa installed for the script to work. The script assumes that bwa is installed and in your PATH environment. If this is not true, add the path to the binary to the script.
+
+The script takes five arguments:
+
+	1) The number of repeats, i.e. how many time each mapper 
+		 should run.
+  2) The maximum edits allowed. Unlike the test script, that
+     only runs with the edit you provide as an argument, the
+     performance script will run from zero edits up to your
+     argument.
+  3) The reference genome
+  4) The reads file
+  5) The file you want the script to save the performance 
+     measures in.
+   
+To add mappers you need to update the script similarly to how you add mappers to the test script. You can add mappers and preprocessing commands in the same way as in the test script.
+     
+	exact=./readmappers/exact_readmapper
+	bwt=./readmappers/bwt_readmapper
+
+	# Preprocessing commands.
+	declare -a names=(
+		Exact
+		BWT
+	)
+	declare -a preprocess_cmds=(
+		true
+		"$bwt -p $reference"
+	)
+
+You *cannot* add the mapping commands in the same way as in the test script. The number of edits vary from each call to the mappers, and the script assumes that the mappers take a -d option that it can give your commands.
+
+Specify the commands you need, but without the -d option. That will be given as the last argument to the command as the script runs.
+
+	declare -a map_cmds=(
+	 "$exact $reference $reads"
+	 "$bwt $reference $reads"
+	)
+
